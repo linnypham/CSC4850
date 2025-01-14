@@ -1,0 +1,16 @@
+machine learning:
+	algo to auto learn from data
+	predictive performance, scalability, and autonomy
+artificial intelligence: a subfield of CS; computer programs that can solve problems humans are good at
+machinen learning: a subfield of AI, focused on learning from data
+neural networls: a parametric model used in ML; based on biological neurons
+deep learning: neural networks with multiple layers
+data science: an emerging eld which applies ML techniques to domain-specific 
+
+types of ML:
+supervised learning:
+	have labeled examples of correct behavior
+semi-supervised learning:
+	learning system interacts w/ the world and leans to maximize a scalar reward signal
+reinforment learning: 
+unsupervised learning:
