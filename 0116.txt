@@ -1,0 +1,10 @@
+machine learning
+
+workflow:
+    should?
+    gather data
+    establishing a baseline
+    choosing a modeloptimization
+    hyperparameter search
+    analyze performance
+
