@@ -7,5 +7,5 @@ def entropy(a,b):
     entropy = -(num1)*log2(num1) - (num2)*log2(num2)
     return entropy
 
-def information_gain():
+
     
