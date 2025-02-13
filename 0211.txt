@@ -1,0 +1,4 @@
+independent:
+    P(A and B) = P(A)P(B)
+conditional independent:
+    
