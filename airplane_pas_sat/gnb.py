@@ -52,3 +52,4 @@ agg_accuracy = evaluate_clusters(y, agg_labels)
 # Full workflow
 print(f"K-Means Accuracy: {kmeans_accuracy:.3f}")
 print(f"Agglomerative Accuracy: {agg_accuracy:.3f}")
+ccc
