@@ -1,50 +1,54 @@
-from sklearn.naive_bayes import GaussianNB
-from sklearn.preprocessing import LabelEncoder
-import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.metrics import accuracy_score
+from sklearn.impute import SimpleImputer
 
-# Load datasets
-test = pd.read_csv('test.csv')
-train = pd.read_csv('train.csv')
+# Load data
+train = pd.read_csv('airplane_pas_sat/train.csv', index_col=0)
+test = pd.read_csv('airplane_pas_sat/test.csv', index_col=0)
+data = pd.concat([train, test])
 
-# Identify categorical columns
-categorical_cols = ['Gender', 'Customer Type', 'Type of Travel', 'Class', 'satisfaction']
+# Handle missing values for categorical columns
+categorical_cols = ['Gender', 'Customer Type', 'Type of Travel', 'Class']
+imputer_cat = SimpleImputer(strategy='most_frequent')  # For categorical columns
+data[categorical_cols] = imputer_cat.fit_transform(data[categorical_cols])
 
-# Create a dictionary to store encoders for each column
-encoders = {}
-for col in categorical_cols:
-    le = LabelEncoder()
-    train[col] = le.fit_transform(train[col])
-    test[col] = le.transform(test[col])  # Might raise error if unseen labels exist
-    encoders[col] = le
+# Handle missing values for numerical columns
+numerical_cols = data.select_dtypes(include=['float64', 'int64']).columns
+imputer_num = SimpleImputer(strategy='mean')  # For numerical columns
+data[numerical_cols] = imputer_num.fit_transform(data[numerical_cols])
 
-# Split features and labels
-X_train = train.drop(columns=["Unnamed: 0", "id", "satisfaction"]).fillna(0)
-y_train = train['satisfaction']
+# Convert 'satisfaction' to binary labels
+data['satisfaction'] = data['satisfaction'].map({'satisfied': 1, 'neutral or dissatisfied': 0})
 
-X_test = test.drop(columns=["Unnamed: 0", "id", "satisfaction"]).fillna(0)
-y_test = test['satisfaction']
+# One-hot encode categorical columns
+X = pd.get_dummies(data.drop(['id', 'satisfaction'], axis=1), columns=categorical_cols)
+y = data['satisfaction']
 
-# Train GaussianNB
-model = GaussianNB()
-model.fit(X_train, y_train)
+# Standardize numerical features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
 
-# Compute log probability differences
-log_prob_diff = np.abs(
-    model.theta_[1] / np.sqrt(model.var_[1]) - 
-    model.theta_[0] / np.sqrt(model.var_[0])
-)
+# Apply K-Means clustering
+kmeans = KMeans(n_clusters=2, random_state=42)
+kmeans_labels = kmeans.fit_predict(X_scaled)
 
-# Get top discriminative feature names
-top_words_indices = np.argsort(log_prob_diff)[::-1][:10]
-words = X_train.columns  # Now defined properly
-top_words = [words[i] for i in top_words_indices]
+# Apply Agglomerative Clustering
+agg = AgglomerativeClustering(n_clusters=2)
+agg_labels = agg.fit_predict(X_scaled)
 
-print("Top 10 discriminative features:")
-for word in top_words:
-    print(word)
-train_accuracy = model.score(X_train, y_train) * 100
-test_accuracy = model.score(X_test, y_test) * 100
+# Define function to evaluate clusters
+def evaluate_clusters(true_labels, cluster_labels):
+    cluster_df = pd.DataFrame({'cluster': cluster_labels, 'true_label': true_labels})
+    majority_label = cluster_df.groupby('cluster')['true_label'].agg(lambda x: x.mode()[0])
+    cluster_df['predicted'] = cluster_df['cluster'].map(majority_label)
+    return accuracy_score(cluster_df['true_label'], cluster_df['predicted'])
 
-print(f"Training Accuracy: {train_accuracy:.2f}%")
-print(f"Testing Accuracy: {test_accuracy:.2f}%")
+# Evaluate models
+kmeans_accuracy = evaluate_clusters(y, kmeans_labels)
+agg_accuracy = evaluate_clusters(y, agg_labels)
+
+# Full workflow
+print(f"K-Means Accuracy: {kmeans_accuracy:.3f}")
+print(f"Agglomerative Accuracy: {agg_accuracy:.3f}")
